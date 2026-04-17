@@ -1,0 +1,52 @@
+# zUMIs template for DBiT multiome RNA processing.
+# The pipeline copies this file and replaces SAMPLEID, READ1, READ2, and OUT_zUMI.
+# Edit the reference and executable paths before running on a new machine.
+
+project: SAMPLEID
+sequence_files:
+  file1:
+    name: READ1
+    base_definition:
+      - BC(33-40,71-78)
+      - UMI(23-32)
+  file2:
+    name: READ2
+    base_definition: cDNA(1-150)
+reference:
+  STAR_index: /path/to/star/mm10_noGTF
+  GTF_file: /path/to/gencode.mm10.annotation.gtf
+  additional_STAR_params: '''--limitSjdbInsertNsj 2000000'''
+  additional_files: ~
+out_dir: OUT_zUMI
+num_threads: 30
+mem_limit: 150
+filter_cutoffs:
+  BC_filter:
+    num_bases: 3
+    phred: 20
+  UMI_filter:
+    num_bases: 2
+    phred: 20
+barcodes:
+  barcode_num: ~
+  barcode_file: resources/DBiT/DBiT.whitelist.txt
+  automatic: no
+  BarcodeBinning: 0
+  nReadsperCell: 100
+  demultiplex: no
+counting_opts:
+  introns: yes
+  downsampling: '0'
+  strand: 0
+  Ham_Dist: 1
+  velocyto: no
+  primaryHit: yes
+  twoPass: no
+make_stats: yes
+which_Stage: Filtering
+Rscript_exec: Rscript
+STAR_exec: STAR
+pigz_exec: pigz
+samtools_exec: samtools
+zUMIs_directory: /path/to/zUMIs
+read_layout: SE
