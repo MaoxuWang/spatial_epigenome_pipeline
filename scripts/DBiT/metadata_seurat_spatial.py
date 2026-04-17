@@ -52,10 +52,6 @@ def main():
         spot_width = float(g.attrib['width'])
         spot_height = float(g.attrib['height'])
         in_tissue = 1
-        # if(g.attrib['class'] == 'st1'):
-        #     in_tissue = 1
-        # else:
-        #     in_tissue = 0
         
         row = int((x - 100) / 20) + 1
         col = int((y - 100) / 20) + 1

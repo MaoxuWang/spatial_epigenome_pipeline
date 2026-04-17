@@ -92,9 +92,7 @@ def label_transfer(atac_st, reference, query, output_dir, sampleid):
 
         vae.train(max_epochs=1000, early_stopping=True)
 
-        # ax = vae.history['elbo_train'][1:].plot()
         # vae.history['elbo_validation'].plot(ax=ax)
-        ## --
 
         temp = reference.obs
         temp.index = temp.index + "_reference"

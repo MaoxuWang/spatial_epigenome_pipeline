@@ -115,7 +115,6 @@ while true; do
     esac
 done
 
-## ---- inspect arguments ---
 
 if [[ ! -n $outdir ]]; then outdir="./result"; fi
 if [[ ! -n $n_line ]]; then n_line="-1"; fi
@@ -146,7 +145,6 @@ else
 fi 
 
 
-## ---- SOFTWARE --- 
 trim_galore="${TRIM_GALORE:-trim_galore}"
 cutadapt="${CUTADAPT:-cutadapt}"
 bedtools="${BEDTOOLS:-bedtools}"
@@ -171,7 +169,6 @@ spatial_metadata="$src/metadata_seurat_spatial.py"
 bigWigToBedGraph="${BIGWIG_TO_BEDGRAPH:-bigWigToBedGraph}"
 bedGraphToBigWig="${BEDGRAPH_TO_BIGWIG:-bedGraphToBigWig}"
 zUMI="${ZUMIS:-bash /path/to/zUMIs.sh}"
-## ---- FILES ---
 hg38_idx="${HG38_BOWTIE2_INDEX:-/path/to/bowtie2/hg38}"
 mm10_idx="${MM10_BOWTIE2_INDEX:-/path/to/bowtie2/mm10}"
 chrom_size_var="${species^^}_CHROM_SIZES"
@@ -274,9 +271,6 @@ function spatial_position(){
         --img_path $outdir/spatial/${sampleid}/tissue_lowres_image.png \
         -o $outdir/spatial/${sampleid}
 
-    # if [[ -s $outdir/fragments/${sampleid}_CB.500.metadata.txt ]];then
-    #     mv $outdir/fragments/${sampleid}_CB.500.metadata.txt $outdir/fragments/${sampleid}_CB.metadata.txt
-    # fi 
     $Rscript $createSeuratObj \
         $outdir/fragments/${sampleid}_CB.exp.tsv \
         $outdir/fragments/${sampleid}_CB.metadata.txt \

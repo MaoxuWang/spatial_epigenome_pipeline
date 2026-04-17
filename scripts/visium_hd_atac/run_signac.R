@@ -18,7 +18,6 @@ library(data.table)
 
 cat("--- R script starting: Signac spatial epigenomics pipeline (SE IVT deduplication version) ---\n")
 
-# --- 2. Set up command line arguments ---
 parser <- ArgumentParser()
 parser$add_argument("--input_file", type="character", required=TRUE, 
                     help="[Required] Raw SE BAM file with barcodes (e.g., possorted_genome_bam.bam)")
@@ -57,7 +56,6 @@ Args <- parser$parse_args()
 effective_size <- c("hg38" = 2913022398, "mm10" = 2652783500)
 
 
-## -- function ---
 readImage <- function(
     img_dir, assay){
     position_file = paste0(img_dir, "/tissue_positions.parquet")
@@ -86,7 +84,6 @@ readImage <- function(
 }
 
 
-# --- 3. Set up parallel processing ---
 cat(paste("Setting up parallel processing with", Args$n_cores, "cores...\n"))
 if (Args$n_cores > 1) {
   plan("multicore", workers = Args$n_cores)
@@ -95,7 +92,6 @@ if (Args$n_cores > 1) {
   registerDoParallel(cores = Args$n_cores)
 }
 
-# --- 4. Define output paths ---
 dir.create(Args$outdir, recursive = TRUE, showWarnings = FALSE)
 output_rds <- file.path(Args$outdir, paste0(Args$sample_name, ".signac.rds"))
 output_raw_rds <- file.path(Args$outdir, paste0(Args$sample_name, ".signac_raw.rds"))
@@ -129,7 +125,6 @@ if (Args$genome == "mm10"){
     genome(annotations) <- "hg38"
 }
 
-# --- Step 1: Load SE BAM as GRanges ---
 if (grepl("\\.bam$", Args$input_file, ignore.case = TRUE)) {
   output_ext_frag_path <- file.path(Args$outdir, paste0(Args$sample_name, ".extended_fragments.tsv.gz"))
   output_ext_6col_frag_path <- file.path(Args$outdir, paste0(Args$sample_name, ".extended_fragments_6_col.tsv"))
@@ -152,7 +147,6 @@ if (grepl("\\.bam$", Args$input_file, ignore.case = TRUE)) {
 
   } else {
       
-    # --- 步骤 1 & 2: 【修正】内存优化的并行BAM加载 与 精准去重(含Count) ---
     cat(paste0("Filtering mapping quality ", Args$mapq_filter, " and dedup bam...\n"))
 
     bam_file_path <- Args$input_file
@@ -212,7 +206,6 @@ if (grepl("\\.bam$", Args$input_file, ignore.case = TRUE)) {
     cat("\nBAM processed successfully!\n")
     cat(paste("  - Number of unique fragments:", nrow(gr_counts_df), "\n"))
 
-    # --- 步骤 3: 延伸去重后的reads以模拟片段 ---
     cat("Step 3: extend single-end fragments", Args$extend_bp, "bp...\n")
 
     gr_dedup <- makeGRangesFromDataFrame(
@@ -295,7 +288,6 @@ if (grepl("\\.bam$", Args$input_file, ignore.case = TRUE)) {
     cat("...save successfully\n")
   }
 
-  # -- step: remove contamination
   cat("--- [Integration Step] Running AWK script for cross-contamination removal... ---\n")
 
   # 1. 定义清理后的文件路径
@@ -325,7 +317,6 @@ if (grepl("\\.bam$", Args$input_file, ignore.case = TRUE)) {
 
 } else if (grepl("\\.fragments\\.tsv\\.gz$", Args$input_file, ignore.case = TRUE)) {
 
-    # --- 路径 2: 输入是 fragments 文件 ---
     cat("--- Input is a .fragments.tsv.gz file. Skipping Steps 1-3. ---\n")
     
     # 将 output_ext_frag_path 直接设置为输入的 fragments 文件
@@ -347,7 +338,6 @@ if (grepl("\\.bam$", Args$input_file, ignore.case = TRUE)) {
                ". Please provide a .bam or .fragments.tsv.gz file."))
 }
 
-# --- Step 4: Create ChromatinAssay ---
 cat("Step 4: Creating ChromatinAssay...\n")
 
 print(paste("Fragment file used in downstream analysis: ", output_ext_frag_path))
@@ -384,7 +374,6 @@ chrom_assay <- CreateChromatinAssay(
   min.cells = 100,
   min.features = 0)
 
-# --- Step 5: Create Seurat object ---
 cat("Step 5: Creating Seurat object...\n")
 sp_obj <- CreateSeuratObject(
   counts = chrom_assay, # Create an empty object
@@ -392,7 +381,6 @@ sp_obj <- CreateSeuratObject(
   assay = Args$assay
 )
 
-# --- Step 6: Load and add spatial information ---
 cat("Step 6: Loading spatial data...\n")
 image <- readImage(Args$spatial_dir, Args$assay)
 
@@ -405,12 +393,10 @@ sp_obj <- subset(sp_obj, cells = cell_used)
 sp_obj[['slice_1']] <- image
 Annotation(sp_obj) <- annotations
 
-# --- Step 7: Calculate and add QC Metrics ---
 cat("Step 7: Calculating TSS enrichment and FRiP...\n")
 sp_obj <- PercentageFeatureSet(sp_obj, pattern = "^chrM-", col.name = "percent.mt", assay = Args$assay)
 sp_obj <- TSSEnrichment(sp_obj, assay = Args$assay)
 
-# --- Step 8 (Optional): Add external Metadata ---
 if (!is.null(Args$metadata_file)) {
   cat("Step 8: Adding external metadata...\n")
   metadata <- read.table(Args$metadata_file, 
@@ -424,7 +410,6 @@ sp_obj <- FRiP(
   assay = Args$assay,
   total.fragments = 'n_fragment'
 )
-# --- Step 9: [Core step] Calculate Gene Activity Score ---
 cat("Step 9: Calculating Gene Activity Score...\n")
 # GeneActivity will use our provided, already deduplicated and extended "fragments"
 gene_activities <- GeneActivity(
@@ -436,7 +421,6 @@ gene_activities <- GeneActivity(
 # Add Gene Activity Score as a new "RNA" Assay
 sp_obj[['RNA']] <- CreateAssayObject(counts = gene_activities)
 
-# --- Step 10: Filter & Normalize Gene Activity ---
 cat("Step 10: Filtering and normalizing Gene Activity (RNA Assay)...\n")
 valid_genes <- grep("^Gm|^Mir", rownames(sp_obj[['RNA']]), invert = TRUE, value = TRUE)
 sp_obj[['RNA']] <- subset(sp_obj[['RNA']], features = valid_genes)
@@ -455,7 +439,6 @@ sp_obj %>%
     FindClusters(verbose = FALSE, resolution = Args$resolution) %>%
     RunUMAP(verbose = FALSE, dims = 1:10) -> sp_obj
 
-# --- Step 12: Save object and QC plots ---
 cat("Step 12: Saving RDS object and QC plots...\n")
 mcsaveRDS(sp_obj, output_rds) # Save final Seurat object
 

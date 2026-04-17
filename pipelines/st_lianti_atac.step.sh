@@ -28,7 +28,6 @@ if [[ ! -d ./logs ]];then
     mkdir ./logs
 fi 
 
-## ---function -----
 
 function barcode_calling(){
     read1=$1

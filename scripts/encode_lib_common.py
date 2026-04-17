@@ -183,7 +183,6 @@ def gunzip(f, suffix, out_dir):
                              os.path.basename(strip_ext_gz(f)))
     if suffix:
         gunzipped += '.{}'.format(suffix)
-    # cmd = 'gzip -cd {} > {}'.format(f, gunzipped)
     cmd = 'zcat -f {} > {}'.format(f, gunzipped)
     run_shell_cmd(cmd)
     return gunzipped

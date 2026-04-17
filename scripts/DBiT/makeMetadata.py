@@ -172,7 +172,6 @@ def main():
     df_in_tissue = df_in_tissue[[0, 'in_tissue', 2, 1]]
 
     # Replace NaN values with 0
-    # df_in_tissue = df_in_tissue.fillna(0)
     # df_in_tissue['in_tissue'] = 1 if not in_tissue else df_in_tissue['in_tissue'].fillna(0)
     df_in_tissue.loc[df_in_tissue.index.isin(valid_barcodes), 'in_tissue'] = 1
 
@@ -200,7 +199,6 @@ def main():
     df_in_tissue[df_in_tissue['in_tissue'] == 1].loc[:, ['barcode']].to_csv(os.path.join(outdir, "ROI_barcodes.txt"), index=False, header=False)
     # ## 3. Check_spots_alignment
     im = cv2.imread(out_png)
-    # im_res = im
     im_res = cv2.resize(im, (args.img_res, args.img_res))
 
     spots = pd.read_csv(os.path.join(outdir, "tissue_positions_list.csv"), header=None)

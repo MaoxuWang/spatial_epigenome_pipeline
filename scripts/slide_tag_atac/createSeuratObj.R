@@ -29,7 +29,6 @@ sampleid = gsub(".gene_activity.h5ad", "", Args$input_h5ad) # out/sample_name
 sampleName = gsub(".*\\/", "", sampleid)
 sampleid = paste0(Args$outdir,"/", sampleName)
 
-### ---- main step ----
 ## Step 1. convert h5ad to seurat
 
 Convert(Args$input_h5ad, 

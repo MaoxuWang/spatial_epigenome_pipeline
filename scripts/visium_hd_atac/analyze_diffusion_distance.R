@@ -1,10 +1,8 @@
-# --- 1. 加载必要的库 ---
 library(data.table)
 library(argparse)
 library(tidyverse)
 
 
-# --- 2. 设置命令行参数 ---
 parser <- ArgumentParser(description = "Analyze Spatial Diffusion Distance from 6-Column Fragments")
 parser$add_argument("--fragments_file", type="character", required=TRUE, 
                     help="[Required] 6-column (chr, start, end, barcode, count, strand) fragments.tsv.gz file")
@@ -23,7 +21,6 @@ dir.create(Args$outdir, recursive = TRUE, showWarnings = FALSE)
 output_tsv <- file.path(Args$outdir, "diffusion_by_distance.tsv")
 output_pdf <- file.path(Args$outdir, "diffusion_plot.pdf")
 
-# --- 3. 加载 Fragments 文件 ---
 cat(paste("Loading fragments file:", Args$fragments_file, "\n"))
 tryCatch({
   dt <- fread(
@@ -36,7 +33,6 @@ tryCatch({
 
 cat("Fragments loaded. Total reads:", dt[, sum(count)], "\n")
 
-# --- 4. 解析 Barcode 坐标 ---
 cat("Parsing barcodes to extract coordinates...\n")
 # 示例: s_016um_00365_00044
 dt[, c("s", "res_str", "x_str", "y_str") := tstrsplit(barcode, "_", fixed=TRUE)]
@@ -52,7 +48,6 @@ if (anyNA(dt$x) || anyNA(dt$y)) {
 file_resolution <- dt$resolution[1]
 cat(paste("Detected file resolution:", file_resolution, "um\n"))
 
-# --- 5. 构建 Fragment Key 并聚合 ---
 cat("Aggregating reads by fragment key and barcode...\n")
 dt[, fragment_key := paste(chr, start, strand, sep = ":")] # 5'prime 已在 start/end
 
@@ -60,7 +55,6 @@ dt[, fragment_key := paste(chr, start, strand, sep = ":")] # 5'prime 已在 star
 # 聚合 reads, 得到每个 (key, barcode) 组合的总数
 key_summary <- dt[, .(read_count = sum(count)), by = .(fragment_key, barcode, x, y)]
 
-# --- 6. 查找每个 Key 的“优势” Barcode ---
 cat("Identifying dominant barcode for each fragment key...\n")
 # 1. 找出每个 key 的最大 read 数
 key_summary[, max_count := max(read_count), by = fragment_key]
@@ -75,7 +69,6 @@ dominant_map <- dominant_map[, .(fragment_key, dominant_x = x, dominant_y = y)]
 
 cat("Dominant barcode map created.\n")
 
-# --- 7. 合并并计算所有 Non-Dominant Reads 的距离 ---
 cat("Merging maps and calculating distances for non-dominant reads...\n")
 # 将 "获胜者" 的坐标合并回 "所有 reads" 的表
 all_reads_with_dominant <- merge(key_summary, dominant_map, by = "fragment_key")
@@ -90,7 +83,6 @@ non_dominant_reads[, dist_bins := sqrt((x - dominant_x)^2 + (y - dominant_y)^2)]
 # 转换为物理距离 (um)
 non_dominant_reads[, dist_um := dist_bins * file_resolution]
 
-# --- 8. 生成扩散直方图数据 ---
 cat("Generating diffusion histogram...\n")
 # 对距离进行分箱 (例如, 0-16um, 16-32um, ...)
 bins <- seq(0, Args$max_dist_um, by = Args$bin_width_um)
@@ -105,17 +97,14 @@ diffusion_histogram <- non_dominant_reads[,
   by = .(dist_bin_label)
 ]
 
-# --- 9. (可选) 计算总 reads 以便归一化 ---
 total_reads <- dt[, sum(count)]
 diffusion_histogram[, fraction_of_total := total_diffused_reads / total_reads]
 
 setkey(diffusion_histogram, dist_bin_label)
 
-# --- 10. 保存 TSV 结果 ---
 cat(paste("Saving results to:", output_tsv, "\n"))
 fwrite(diffusion_histogram, file = output_tsv, sep = "\t")
 
-# --- 11. 绘制扩散图 ---
 cat(paste("Saving plot to:", output_pdf, "\n"))
 
 # (为了绘图，我们需要将 factor 转回数值，取区间的起始点)

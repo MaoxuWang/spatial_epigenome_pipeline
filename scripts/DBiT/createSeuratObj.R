@@ -82,21 +82,12 @@ createSpatialObj <- function(
 
     pc.num = 1:20
 
-    # object_spatial %>%
-    #     SCTransform(assay = "RNA", return.only.var.genes = FALSE, 
-    #         vars.to.regress = "nCount_RNA",
-    #         verbose = FALSE ) %>%
-    #     RunPCA(assay = "SCT", verbose = FALSE, pcs.compute=50) %>%
-    #     FindNeighbors(dims = 1:25, verbose = FALSE) %>%
-    #     FindClusters(verbose = FALSE, resolution = c(0.2, 0.4,0.6)) %>%
-    #     RunUMAP(dims = 1:25, verbose = FALSE) -> object_spatial
     if (in_tissue == TRUE){
         out_n_frag_pdf = gsub(".rds", ".n_frag.pdf", out_seurat)
 
         object_spatial %>%
             NormalizeData(verbose = FALSE) %>%
             FindVariableFeatures(selection.method = "vst", nfeatures = 2000) %>%
-            # ScaleData(verbose = FALSE, vars.to.regress = "nCount_RNA") %>%
             ScaleData(verbose = FALSE) %>%
             RunPCA(verbose = FALSE) %>%
             RunUMAP(reduction = "pca", dims = pc.num, verbose = F) %>%

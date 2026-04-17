@@ -13,7 +13,6 @@ outdir = args[5]
 radius_level = as.numeric(args[6])
 in_tissue = as.logical(args[7]) # true or false
 
-## ----- CONSTANT -----
 spot_radius = NULL
 min.cells = 5
 min.features = 100
@@ -33,7 +32,6 @@ if(is.null(spot_radius)){
     spot_radius = spot_radius
 }
 
-## ------ function -------
 cal_zoom_rate <- function(width, height){
     std_width = 1000
     std_height = std_width / (46 * 31) * (46 * 36 * sqrt(3) / 2.0)
@@ -76,7 +74,6 @@ createSpatialObj <- function(
                     imagecol = barcode_pos$pos_w)
     rownames(coord) <- barcode_pos$Barcode
 
-    # object_spatial
     sample1 <-  new(Class = "VisiumV1",
                 image = png,
                 scale.factors = Seurat::scalefactors(zoom_scale, 100, zoom_scale, zoom_scale),
@@ -130,7 +127,6 @@ plot_spatial <- function(
 }
 
 
-### ---- main step ----
 ## Step 1. convert h5ad to seurat
 
 Convert(input_h5ad, 

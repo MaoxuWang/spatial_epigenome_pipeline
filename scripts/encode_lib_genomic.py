@@ -243,10 +243,8 @@ def subsample_ta_se(ta, subsample, non_mito, mito_chr_name, out_dir):
         '{}.'.format(human_readable_number(subsample)) if subsample > 0 else ''
     )
 
-    # bash-only
     cmd = 'zcat -f {} | '
     if non_mito:
-        # cmd += 'awk \'{{if ($1!="'+mito_chr_name+'") print $0}}\' | '
         cmd += 'grep -v \'^'+mito_chr_name+'\\b\' | '
     if subsample > 0:
         cmd += 'shuf -n {} --random-source=<(openssl enc -aes-256-ctr '

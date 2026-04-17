@@ -156,23 +156,13 @@ df_in_tissue.to_csv(os.path.join(outdir, "tissue_positions_list.csv"), index=Fal
 
 # # ## 3. Check_spots_alignment
 
-# im = cv2.imread(img_path)
-# im_res = im
-
-
-# spots = pd.read_csv(os.path.join(outdir, "tissue_positions_list.csv"), header=None)
-# spots = spots.set_axis(['barcode', 'in_tissue', 'array_row', 'array_column', 'pxl_col_in_fullres', 'pxl_row_in_fullres'], axis=1)
 
 
 
 
-# for i, spot in spots.iterrows():
-#     startX = int(round(spot['pxl_row_in_fullres'] - spot_width))
-#     startY = int(round(spot['pxl_col_in_fullres'] - spot_height))
-#     width = int(round(spot_width)*2)
-#     height = int(round(spot_height)*2)
+
+
     
-#     if(spot['in_tissue'] == 1):
 #         cv2.rectangle(im_res, (startX, startY), (startX+width, startY+height), (0, 255, 0), 1)
 #     #else:
 #         #cv2.rectangle(im_res, (startX, startY), (startX+width, startY+height), (0, 0, 255), 1)

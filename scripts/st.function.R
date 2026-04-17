@@ -100,7 +100,6 @@ spatial_feature_plot <- function(
                 fixed_coordinates +
                 labs(title = main_title) +
                 theme(
-                            # legend.position="none",
                     plot.title = element_text(
                         hjust = 0.5, size = 15, face = "bold"),
                     legend.title = element_blank(), 
@@ -128,7 +127,6 @@ spatial_feature_plot <- function(
             fixed_coordinates +
             labs(title = main_title) +
             theme(
-                        # legend.position="none",
                 plot.title = element_text(
                     hjust = 0.5, size = 15, face = "bold"),
                 legend.title = element_blank(), 
@@ -167,7 +165,6 @@ spatial_dim_plot <- function(
         print("Please provide column information as factor")
     }
     if (is.null(cols)){
-        # pal <- jdb_palette("lawhoops")
         if(length(unique(column)) > 30){
             cols = colorRampPalette(pal)(length(unique(column)))
         }else{
@@ -199,11 +196,9 @@ spatial_dim_plot <- function(
         labs(title = main_title) +
         fixed_coordinates +
         theme(
-                    # legend.position="none",
             plot.title = element_text(
                 hjust = 0.5, size = 15, face = "bold"),
             legend.title = element_blank(), 
-            # legend.key = element_rect(fill = "white", color = "white", linewidth = 2),
             legend.key.size = unit(8, "mm"),
             legend.text = element_text(size=12))
 
@@ -212,7 +207,6 @@ spatial_dim_plot <- function(
 }  
 
 
-# extractTFnames <-  function(motifIDs){
 #     sapply(strsplit(sapply(strsplit(motifIDs,"_LINE.",fixed=FALSE),"[[",2),"_",fixed=FALSE),"[[",2)
 #   }
 

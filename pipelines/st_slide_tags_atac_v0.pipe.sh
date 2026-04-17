@@ -127,7 +127,6 @@ while true; do
     esac
 done
 
-## ---- inspect arguments ---
 ### cell barcode on atac read1
 if [[ ! $atac_read1 =~ "R1" ]]; then
     echo $atac_read1 "wrong Read1 specified"
@@ -173,7 +172,6 @@ else
 fi 
 
 
-## ---- SOFTWARE --- 
 trim_galore="${TRIM_GALORE:-trim_galore}"
 cutadapt="${CUTADAPT:-cutadapt}"
 bedtools="${BEDTOOLS:-bedtools}"
@@ -191,14 +189,12 @@ python_cv2="${PYTHON_CV2:-python}"
 bigWigToBedGraph="${BIGWIG_TO_BEDGRAPH:-bigWigToBedGraph}"
 bedGraphToBigWig="${BEDGRAPH_TO_BIGWIG:-bedGraphToBigWig}"
 
-## --- custom scripts
 src="${SPATIAL_EPIGENOME_SCRIPT_DIR:-${repo_root}/scripts}"
 extract_barcodes="$src/DBiT/extract_barcodes.py"
 mtx2svg="$src/DBiT/position_matrix.pl"
 createSeuratObj="$src/DBiT/createSeuratObj.R"
 spatial_metadata="$src/DBiT/metadata_seurat_spatial.py"
 
-## ---- FILES ---
 hg38_idx="${HG38_BOWTIE2_INDEX:-/path/to/bowtie2/hg38}"
 mm10_idx="${MM10_BOWTIE2_INDEX:-/path/to/bowtie2/mm10}"
 chrom_size_var="${species^^}_CHROM_SIZES"
@@ -268,7 +264,6 @@ function barcode_calling(){
     if [[ ! -d $outdir/barcode ]];then 
         mkdir -p $outdir/barcode
     fi 
-    # export PERL5LIB="/usr/lib64/perl5/vendor_perl"
 
     if [ ! -s $atac_read1 ]; then
         echo $atac_read1 "Read1 not exist"
@@ -405,13 +400,6 @@ function snapATAC2(){
         --max_iter 1 \
         --n_features 50000
 
-    #ls $outdir/fragments/*bw | while read ff;do
-    #    sample=$(basename -s ".bw" $ff)
-    #    $bigWigToBedGraph $ff $outdir/fragments/${sample}.bg
-    #    $bedGraphToBigWig $outdir/fragments/${sample}.bg \
-    #        $chromSize \
-    #        $outdir/fragments/${sample}.bigWig
-    #done 
 
     ls $outdir/fragments/*metadata.txt | while read meta_file;do 
         prefix_sample=$(basename -s ".metadata.txt" $meta_file)
@@ -445,9 +433,6 @@ function spatial_position(){
         --img_path $outdir/spatial/${sampleid}/tissue_lowres_image.png \
         -o $outdir/spatial/${sampleid}
 
-    # if [[ -s $outdir/fragments/${sampleid}_CB.500.metadata.txt ]];then
-    #     mv $outdir/fragments/${sampleid}_CB.500.metadata.txt $outdir/fragments/${sampleid}_CB.metadata.txt
-    # fi 
     $Rscript $createSeuratObj \
         $outdir/fragments/${sampleid}_CB.exp.tsv \
         $outdir/fragments/${sampleid}_CB.metadata.txt \
@@ -469,9 +454,6 @@ function bulk(){
         | cut -f 1 | grep -v MT \
         | xargs $samtools view -b $outdir/align/${sampleid}.sorted.bam > $outdir/bulk/${sampleid}.clean.bam
     
-    # $Rscript $src/shiftAlignment.R \
-    #     $outdir/bulk/${sampleid}.clean.bam \
-    #     $outdir/bulk/${sampleid}.shifted.bam
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.clean.bam
 
     effect_genome_size=2652783500
@@ -517,7 +499,6 @@ function stat(){
 }
 
 
-## ------- ###
 
 
 set -x 
@@ -525,7 +506,6 @@ set -x
 
 case "$option" in
 pipe)
-    #stat_abortive
     barcode_calling
     trim_fq
     align 

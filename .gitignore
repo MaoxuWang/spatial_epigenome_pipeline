@@ -1,0 +1,62 @@
+# Runtime output
+results/
+result/
+output/
+outputs/
+logs/
+tmp/
+temp/
+scratch/
+
+# Sequencing and alignment data
+*.fastq
+*.fq
+*.fastq.gz
+*.fq.gz
+*.bam
+*.bai
+*.sam
+*.cram
+*.crai
+*.bedGraph
+*.bigWig
+*.bw
+*.fragments.tsv.gz
+*.tsv.gz.tbi
+
+# Large analysis objects
+*.h5ad
+*.h5
+*.h5seurat
+*.rds
+*.RData
+*.loom
+*.mtx
+*.mtx.gz
+
+# Reports that can be regenerated
+*.pdf
+*.png
+*.svg
+*.html
+*.log
+*.out
+*.err
+
+# Python and R cache
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.Rhistory
+.RDataTmp
+.Rproj.user/
+
+# Local machine configuration
+config/pipeline.env
+.env
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

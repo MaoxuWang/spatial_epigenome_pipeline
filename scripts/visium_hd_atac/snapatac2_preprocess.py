@@ -229,12 +229,6 @@ def main():
             _bin_size,
             args.tissue_barcode
         )
-        # if not args.count:
-        #     getPeakMatrix(
-        #         atac_st,
-        #         args.species,
-        #         args.output_dir,
-        #         args.sampleid + "_" + args.barcode_tag)
 
 if __name__ == '__main__':
     main()

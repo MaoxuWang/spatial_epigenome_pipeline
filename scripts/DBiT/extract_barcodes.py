@@ -72,8 +72,6 @@ def writeFile(
     i,
     paired
 ):
-    # readName = readNames[i].strip().replace(" ", "_") + ":" + cellBarcode + ":" + UMI + "\n"  
-    # readName = readNames[i].strip() + ":" + cellBarcode + ":" + UMI + "\n"  
     readName = "@" + cellBarcode + ":" + UMI + ":" + readNames[i][1:]  
 
     outFile.write(readName.encode())

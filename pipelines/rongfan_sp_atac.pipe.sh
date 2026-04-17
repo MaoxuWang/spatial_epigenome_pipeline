@@ -107,7 +107,6 @@ while true; do
     esac
 done
 
-## ---- inspect arguments ---
 
 if [[ ! -n $outdir ]]; then outdir="./result"; fi
 if [[ ! -n $option ]]; then option="pipe"; fi
@@ -137,7 +136,6 @@ else
 fi
 
 
-## ---- SOFTWARE ---
 trim_galore="${TRIM_GALORE:-trim_galore}"
 cutadapt="${CUTADAPT:-cutadapt}"
 bedtools="${BEDTOOLS:-bedtools}"
@@ -167,7 +165,6 @@ cellranger="${CELLRANGER_ATAC:-cellranger-atac}"
 # Set CELLRANGER_ATAC in config/pipeline.env when using cellranger-atac.
 picard="${PICARD:-picard}"
 
-## ---- FILES ---
 hg38_idx_10X="${HG38_CELLRANGER_ARC_REF:-/path/to/refdata-cellranger-arc-GRCh38}"
 mm10_idx_10X="${MM10_CELLRANGER_ARC_REF:-/path/to/refdata-cellranger-arc-mm10}"
 chrom_size_var="${species^^}_CHROM_SIZES"
@@ -260,7 +257,7 @@ function filterLinker(){
 function cell_ranger(){
     
     if [ -d "$outdir/$sampleid" ]; then
-        echo "Limpando o diretório de saída existente do Cell Ranger: $outdir/$sampleid"
+        echo "Removing existing Cell Ranger output directory: $outdir/$sampleid"
         rm -r "$outdir/$sampleid"
     fi
     
@@ -288,14 +285,6 @@ function trim_Nextera(){
         mkdir -p $outdir/trim
     fi
     
-    # $trim_galore \
-    #   --paired \
-    #   --nextera \
-    #   --stringency 5 \
-    #   --cores $thread_trim \
-    #   -o $outdir/trim \
-    #   $read1 \
-    #   $read2
     if [[ ! -d $outdir/align ]];then
         mkdir -p $outdir/align
     fi
@@ -312,8 +301,6 @@ function trim_Nextera(){
     | $samtools sort -@ $thread_sort -m "12G" \
     > $outdir/align/${sampleid}.sorted.bam
     
-    # | awk -v OFS='\t' '$0~/^@/ { print; next } { split($1,bc,":"); total=length(bc); print $0 "\tCB:Z:" bc[1] "\tUB:Z:" bc[2]}' \
-    
     $samtools index $outdir/align/${sampleid}.sorted.bam
     $samtools stats $outdir/align/${sampleid}.sorted.bam > $outdir/align/${sampleid}.bam.stat
     
@@ -324,13 +311,6 @@ function bulk(){
     if [[ ! -d $outdir/bulk ]];then
         mkdir -p $outdir/bulk
     fi
-    # $picard MarkDuplicates \
-    #   -I $outdir/align/${sampleid}.sorted.bam \
-    #   -O $outdir/bulk/${sampleid}.rmdup.bam \
-    #   -M $outdir/bulk/${sampleid}.dedup.txt \
-    #   -REMOVE_DUPLICATES true \
-    #   -READ_NAME_REGEX null \
-    #   --TMP_DIR ${outdir}/bulk
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.rmdup.bam
     
     ## filter the chrM reads
@@ -338,9 +318,6 @@ function bulk(){
     | cut -f 1 | grep -v MT \
     | xargs $samtools view -b $outdir/bulk/${sampleid}.rmdup.bam > $outdir/bulk/${sampleid}.clean.bam
     
-    # $Rscript $src/shiftAlignment.R \
-    #   $outdir/bulk/${sampleid}.clean.bam \
-    #   $outdir/bulk/${sampleid}.shifted.bam
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.clean.bam
     
     effect_genome_size=2652783500
@@ -356,16 +333,11 @@ function bulk(){
     
 }
 
-#################################################################
-# Bloco de Execução Principal Modificado
-# Alterado para seguir o fluxo do GitHub (filterLinker -> cell_ranger)
-#################################################################
-
+# Generate Cell Ranger-compatible FASTQs before running Cell Ranger ATAC.
 set -x
 
 echo "[$(date)] Filter linkers..."
-# filterLinker
+filterLinker
 
-# Etapa 2: Executar o Cell Ranger ATAC (corresponde à regra cell_ranger)
 echo "[$(date)] Cell Ranger ATAC..."
 cell_ranger

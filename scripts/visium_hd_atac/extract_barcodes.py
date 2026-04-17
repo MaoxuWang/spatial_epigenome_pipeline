@@ -189,7 +189,6 @@ def process_whitelist(args):
 
     for i, indexes in enumerate(chunk_indexes):
         # os.makedirs(os.path.join(args.outdir, "tmp"), exist_ok=True)
-        # out_fq = os.path.join(args.outdir, "tmp", f"{args.sample}_{i}.barcoded.fastq.gz")
         out_fq = os.path.join(args.outdir, f"{args.sample}_{i}.R2_tmp.fastq.gz")
         r2_single_files.append(out_fq)
         if args.paired:

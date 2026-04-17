@@ -145,9 +145,6 @@ SpatialPlot_new <- function (object, group.by = NULL, features = NULL, images = 
                                 pt.size.factor = pt.size.factor, stroke = stroke, 
                                 crop = crop)
       if (is.null(x = group.by)) {
-        # plot <- plot + scale_fill_gradientn(name = features[j], 
-        #                                     colours = SpatialColors(n = 100)) + theme(legend.position = "top") + 
-        #   scale_alpha(range = alpha) + guides(alpha = FALSE)
         
         plot <- plot + scale_fill_gradientn(name = features[j], 
                                             colours = c("blue","green", "red"), oob = scales::squish) + theme(legend.position = "top") + 
@@ -335,9 +332,6 @@ SpatialDimPlot_new <- function (object, group.by = NULL, features = NULL, images
                                 pt.size.factor = pt.size.factor, stroke = stroke, 
                                 crop = crop)
       if (is.null(x = group.by)) {
-        # plot <- plot + scale_fill_gradientn(name = features[j], 
-        #                                     colours = SpatialColors(n = 100)) + theme(legend.position = "top") + 
-        #   scale_alpha(range = alpha) + guides(alpha = FALSE)
         
         plot <- plot + scale_fill_gradientn(name = features[j], 
                                             colours = c("blue","green", "red"), oob = scales::squish) + theme(legend.position = "top") + 

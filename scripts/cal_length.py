@@ -23,7 +23,6 @@ import numpy as np
 import multiprocessing
 from functools import partial
 
-# --- [关键修复] ---
 # 我们在*顶层*定义一个函数来创建嵌套的 defaultdict。
 # 这可以被 'pickle' 库序列化，解决了 multiprocessing 的错误。
 def nested_int_defaultdict():
@@ -76,7 +75,6 @@ def process_chunk(chrom_list, bam_file_path, tag):
     处理一个染色体列表，返回一个计数字典。
     """
     
-    # --- [关键修复] ---
     # 不再使用 lambda，而是使用我们在顶层定义的 'nested_int_defaultdict'
     local_cell_lengths = defaultdict(nested_int_defaultdict)
     
@@ -162,7 +160,6 @@ def main():
     
     args = parser.parse_args()
 
-    # --- 1. 获取染色体列表并分块 ---
     print(f"--- 正在使用 {args.cores} 个核心 ---", file=sys.stderr)
     try:
         with pysam.AlignmentFile(args.bam_file, "rb") as bamfile:
@@ -185,7 +182,6 @@ def main():
 
     print(f"--- 已将 {len(chromosomes)} 个染色体分配给 {len(chromosome_chunks)} 个工作进程 ---", file=sys.stderr)
 
-    # --- 2. 并行处理 ---
     # functools.partial 用于“预打包” 'process_chunk' 函数的固定参数
     worker_func = partial(process_chunk, 
                           bam_file_path=args.bam_file, 
@@ -196,10 +192,8 @@ def main():
         # 并等待所有结果返回
         results_list = pool.map(worker_func, chromosome_chunks)
     
-    # --- 3. 合并结果 ---
     merged_counts = merge_results(results_list)
     
-    # --- 4. 计算中位数并写入 ---
     calculate_and_write_medians(merged_counts, args.output_file)
 
 if __name__ == "__main__":

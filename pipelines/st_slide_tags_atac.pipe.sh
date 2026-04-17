@@ -125,7 +125,6 @@ while true; do
     esac
 done
 
-## ---- inspect arguments ---
 ### cell barcode on atac read1
 if [[ ! -n $outdir ]]; then outdir="./result"; fi
 if [[ ! -n $n_line ]]; then n_line="-1"; fi
@@ -150,7 +149,6 @@ else
     sort_thread=$SLURM_CPUS_PER_TASK
 fi 
 
-## ---- SOFTWARE --- 
 trim_galore="${TRIM_GALORE:-trim_galore}"
 cutadapt="${CUTADAPT:-cutadapt}"
 bedtools="${BEDTOOLS:-bedtools}"
@@ -169,13 +167,11 @@ bigWigToBedGraph="${BIGWIG_TO_BEDGRAPH:-bigWigToBedGraph}"
 bedGraphToBigWig="${BEDGRAPH_TO_BIGWIG:-bedGraphToBigWig}"
 src="${SPATIAL_EPIGENOME_SCRIPT_DIR:-${repo_root}/scripts}"
 
-## --- custom scripts
 slide_tag_src="${src}/slide_tag_atac"
 spatial_src="${src}"
 
 createSeuratObj="$slide_tag_src/createSeuratObj.R"
 
-## ---- FILES ---
 hg38_idx="${HG38_BOWTIE2_INDEX:-/path/to/bowtie2/hg38}"
 mm10_idx="${MM10_BOWTIE2_INDEX:-/path/to/bowtie2/mm10}"
 chrom_size_var="${species^^}_CHROM_SIZES"
@@ -258,7 +254,6 @@ function stat_abortive(){
     fi 
     thread_trim=8
 
-    # less $atac_read2 | head -n 400000 | pigz > $outdir/stat_abortive/$sampleid.100K.R1.fastq.gz
 
     echo "Downsampling to 100K reads..."
 
@@ -337,7 +332,6 @@ function align(){
     if [[ ! -d $outdir/align ]];then 
         mkdir -p $outdir/align
     fi 
-    # input_fq="$outdir/trim/${sampleid}.R2.barcoded_first50.fastq.gz"
     input_fq="$outdir/trim/${sampleid}_clean_barcoded.R2.fastq.gz"
 
     # outdir/trim/${sampleid}_clean_barcoded.R2.fastq.gz
@@ -455,9 +449,6 @@ function bulk(){
         | cut -f 1 | grep -v MT \
         | xargs $samtools view -b $outdir/bulk/${sampleid}.rmdup.bam > $outdir/bulk/${sampleid}.clean.bam
     
-    # $Rscript $src/shiftAlignment.R \
-    #     $outdir/bulk/${sampleid}.clean.bam \
-    #     $outdir/bulk/${sampleid}.shifted.bam
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.clean.bam
 
     effect_genome_size=2652783500
@@ -503,7 +494,6 @@ function stat(){
 }
 
 
-## ------- ###
 
 
 set -x 

@@ -153,7 +153,6 @@ def main():
     mkdir_p(args.out_dir)
 
     # Also get read length
-    # read_len = get_read_length(FASTQ)
     if args.read_len_log:
         with open(args.read_len_log, 'r') as fp:
             read_len = int(fp.read().strip())

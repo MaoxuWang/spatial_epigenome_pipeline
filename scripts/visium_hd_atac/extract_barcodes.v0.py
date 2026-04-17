@@ -34,8 +34,6 @@ def convertChunk(intervals, input_bam, out_fq):
                 continue
             new_name = "@" + true_barcode.replace("-1", "") + ":" + UMI + ":" + read.query_name
             # ## R1：
-            # sequence = read.get_tag('1R')
-            # qualities = read.get_tag('1Y')
 
             ## R2：
             sequence = read.get_forward_sequence()

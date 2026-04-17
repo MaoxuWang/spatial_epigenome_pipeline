@@ -13,7 +13,6 @@ parser$add_argument("--img_dir", type="character", help="image directory")
 parser$add_argument("--outdir", type="character", help="output directory")
 Args <- parser$parse_args()
 
-## ----- CONSTANT -----
 spot_radius = NULL
 min.cells = 5
 min.features = 100
@@ -49,7 +48,6 @@ readImage <- function(
     return(image)
 }
 
-### ---- main step ----
 ## Step 1. convert h5ad to seurat
 
 Convert(Args$input_h5ad, 
@@ -93,7 +91,6 @@ p <- SpatialFeaturePlot(object_spatial,
     features = "n_fragment",
     pt.size.factor = .1,
     stroke = 0,
-    # alpha = c(0.05, 1),
     max.cutoff = "q98",
     min.cutoff = "q2",
     image.alpha = 0) 

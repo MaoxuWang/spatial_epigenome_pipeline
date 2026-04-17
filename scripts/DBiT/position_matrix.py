@@ -31,13 +31,11 @@ def main():
                 if not line:
                     continue
 
-                # my @array = split /\t/,$_;
                 array = line.split('\t')
                 
                 # key 是 array[0] (例如 "10x20")
                 key = array[0]
                 
-                # my @pos = split /x/,$array[0];
                 try:
                     pos = key.split('x')
                     x_pos = int(pos[0])
@@ -52,7 +50,6 @@ def main():
                     # [x, y, genes, counts]
                     data_hash[key] = [x_pos, y_pos, 0, 0.0]
 
-                # for(my $i=1;$i<@array;$i++)
                 for i in range(1, len(array)):
                     val_str = array[i]
                     
@@ -63,14 +60,10 @@ def main():
                     except ValueError:
                         val = 0
 
-                    # if($array[$i] > 0)
                     if val > 0:
-                        # $hash{$array[0]}[2] ++; # genes
                         data_hash[key][2] += 1
-                        # $hash{$array[0]}[3] += $array[$i]; # counts
                         data_hash[key][3] += val
 
-                # if($hash{$array[0]}[2] > $max)
                 if data_hash[key][2] > max_val:
                     max_val = data_hash[key][2]
 
@@ -85,28 +78,22 @@ def main():
     print(f'<svg height="{pheight}" width="{pwidth}" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">')
 
     # 背景黑色矩形
-    # $svg->rect(x=>100,y=>100,width=>990,height=>990,fill=>"black");
     print(f'<rect x="100" y="100" width="990" height="990" fill="black" />')
 
-    # foreach my $key(keys %hash)
     for key in data_hash:
         item = data_hash[key]
         x = item[0]
         y = item[1]
         gene_count = item[2]
 
-        # my $degree = $hash{$key}[2]/$max;
         degree = 0
         if max_val > 0:
             degree = gene_count / max_val
         
         # 坐标变换逻辑
-        # x=>($flank_x + ($x-1)*20)
         rect_x = flank_x + (x - 1) * 20
-        # y=>($flank_y+($y-1)*20)
         rect_y = flank_y + (y - 1) * 20
 
-        # $svg->rect(..., 'opacity',$degree,fill=>"red");
         # 保留4位小数以保持XML整洁
         print(f'<rect x="{rect_x}" y="{rect_y}" width="10" height="10" opacity="{degree:.6f}" fill="red" />')
 

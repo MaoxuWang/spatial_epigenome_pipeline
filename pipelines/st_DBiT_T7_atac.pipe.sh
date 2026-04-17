@@ -13,8 +13,6 @@ SLURM_CPUS_PER_TASK="${SLURM_CPUS_PER_TASK:-$(threads_or_default 4)}"
 
 set -e
 set -o pipefail
-# set -euxo pipefail  # 实时报错并终止执行，显示执行命令
-# trap 'echo "Error at line $LINENO"; exit 1' ERR
 
 helpdoc() {
     cat <<EOF
@@ -120,7 +118,6 @@ while true; do
     esac
 done
 
-## ---- inspect arguments ---
 if [[ ! $read1 =~ "R1" ]]; then
     echo $read1 "wrong Read1 specified"
     exit
@@ -162,7 +159,6 @@ else
 fi 
 
 
-## ---- SOFTWARE --- 
 trim_galore="${TRIM_GALORE:-trim_galore}"
 cutadapt="${CUTADAPT:-cutadapt}"
 bedtools="${BEDTOOLS:-bedtools}"
@@ -188,7 +184,6 @@ bigWigToBedGraph="${BIGWIG_TO_BEDGRAPH:-bigWigToBedGraph}"
 bedGraphToBigWig="${BEDGRAPH_TO_BIGWIG:-bedGraphToBigWig}"
 picard="${PICARD:-picard}"
 
-## ---- FILES ---
 hg38_idx="${HG38_BOWTIE2_INDEX:-/path/to/bowtie2/hg38}"
 mm10_idx="${MM10_BOWTIE2_INDEX:-/path/to/bowtie2/mm10}"
 chrom_size_var="${species^^}_CHROM_SIZES"
@@ -263,7 +258,6 @@ function barcode_calling(){
     if [[ ! -d $outdir/barcode ]];then 
         mkdir -p $outdir/barcode
     fi 
-    # export PERL5LIB="/usr/lib64/perl5/vendor_perl"
 
     if [ ! -s $read1 ]; then
         echo $read1 "Read1 not exist"
@@ -399,7 +393,6 @@ function align(){
         mkdir -p $outdir/align
     fi 
 
-    # if [[ ! -s $outdir/align/${sampleid}.sorted.bam ]];then 
     if [[ $paired == "TRUE" ]];then
         $bowtie2 -x $bowti2_idx \
             --no-unal \
@@ -421,11 +414,6 @@ function align(){
             | $samtools view -q 20 -b \
             > $outdir/align/${sampleid}.sorted.bam
     fi 
-
-    ### Temp -q 5
-    # else
-    #     echo "Align is finished."
-    # fi 
 
     $samtools index $outdir/align/${sampleid}.sorted.bam
     $samtools stats $outdir/align/${sampleid}.sorted.bam > $outdir/align/${sampleid}.bam.stat
@@ -451,7 +439,6 @@ function detect_region_of_interest(){
             --outdir $outdir/spatial \
             --output_prefix $outdir/fragments/${sampleid}_CB
         
-        # perl $mtx2svg $outdir/fragments/${sampleid}_CB.exp.tsv \
         #     > $outdir/spatial/${sampleid}.raw.svg
 
         $python $mtx2svg $outdir/fragments/${sampleid}_CB.exp.tsv \
@@ -512,13 +499,6 @@ function snapATAC2(){
         $species
 
 
-    ##ls $outdir/fragments/*bw | while read ff;do
-    ##    sample=$(basename -s ".bw" $ff)
-    ##    $bigWigToBedGraph $ff $outdir/fragments/${sample}.bg
-    ##    $bedGraphToBigWig $outdir/fragments/${sample}.bg \
-    ##        $chromSize \
-    ##        $outdir/fragments/${sample}.bigWig
-    ##done 
 
     ls $outdir/fragments/*metadata.txt | while read meta_file;do 
         prefix_sample=$(basename -s ".metadata.txt" $meta_file)
@@ -583,28 +563,20 @@ function pseudo_bulk(){
         --TMP_DIR ${outdir}/bulk
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.rmdup.bam
 
-    # ## filter the chrM reads
+    # Remove chrM alignments before bulk coverage and peak calling.
     $samtools idxstats -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.rmdup.bam \
         | cut -f 1 | grep -v MT \
         | xargs $samtools view -b $outdir/bulk/${sampleid}.rmdup.bam > $outdir/bulk/${sampleid}.temp.bam
     
-    # $samtools idxstats -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.rmdup.bam \
-    #     | cut -f 1 | grep -v MT \
-    #     | xargs -I {} samtools view -@ $SLURM_CPUS_PER_TASK -b $outdir/bulk/${sampleid}.rmdup.bam {} \
-    #     > $outdir/bulk/${sampleid}.temp.bam
 
 
-    # 步骤1: 质量过滤 (MAPQ ≥ 20)
+    # Keep high-confidence alignments for bulk coverage and peak calling.
     $samtools view -bh -q 30 -@ $SLURM_CPUS_PER_TASK \
         -o $outdir/bulk/${sampleid}.clean.bam \
         $outdir/bulk/${sampleid}.temp.bam
 
-    # # $Rscript $src/shiftAlignment.R \
-    # #     $outdir/bulk/${sampleid}.clean.bam \
-    # #     $outdir/bulk/${sampleid}.shifted.bam
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.clean.bam
 
-    # effect_genome_size=2652783500
     
     $bamCoverage --numberOfProcessors $SLURM_CPUS_PER_TASK \
         --binSize 10 \
@@ -639,28 +611,20 @@ function bulk(){
         --TMP_DIR ${outdir}/bulk
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.rmdup.bam
 
-    # ## filter the chrM reads
+    # Remove chrM alignments before bulk coverage and peak calling.
     $samtools idxstats -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.rmdup.bam \
         | cut -f 1 | grep -v MT \
         | xargs $samtools view -b $outdir/bulk/${sampleid}.rmdup.bam > $outdir/bulk/${sampleid}.temp.bam
     
-    # $samtools idxstats -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.rmdup.bam \
-    #     | cut -f 1 | grep -v MT \
-    #     | xargs -I {} samtools view -@ $SLURM_CPUS_PER_TASK -b $outdir/bulk/${sampleid}.rmdup.bam {} \
-    #     > $outdir/bulk/${sampleid}.temp.bam
 
 
-    # 步骤1: 质量过滤 (MAPQ ≥ 20)
+    # Keep high-confidence alignments for bulk coverage and peak calling.
     $samtools view -bh -q 30 -@ $SLURM_CPUS_PER_TASK \
         -o $outdir/bulk/${sampleid}.clean.bam \
         $outdir/bulk/${sampleid}.temp.bam
 
-    # # $Rscript $src/shiftAlignment.R \
-    # #     $outdir/bulk/${sampleid}.clean.bam \
-    # #     $outdir/bulk/${sampleid}.shifted.bam
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.clean.bam
 
-    # effect_genome_size=2652783500
     
     $bamCoverage --numberOfProcessors $SLURM_CPUS_PER_TASK \
         --binSize 10 \
@@ -760,7 +724,6 @@ function stat(){
         "${reads_in_peaks}\t" \
         "${frip}" >> ${outdir}/stat/stat.txt
 }
-## ------- ###
 
 
 set -x 
@@ -796,7 +759,6 @@ dedup)
     ;;
 bulk)
     pseudo_bulk
-    # bulk
     ;;
 stat)
     stat
@@ -805,8 +767,6 @@ dedup_UMI)
     dedup_UMI
     ;;
 spatial)
-    # detect_region_of_interest
-    # snapATAC2
     spatial_position
     ;;
 no_IVT)

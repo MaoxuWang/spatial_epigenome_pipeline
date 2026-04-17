@@ -150,7 +150,6 @@ def bam2fragments(
         data = data[data.obs_names.isin(list(cells[0]))]
         print(f'In-tissue barcode: {len(data.obs_names)}', file=sys.stderr)
 
-    # snap.metrics.tsse(data, gene_anno = anno_gff[species])
 
     snap.pl.tsse(data,
         interactive=False, 
@@ -182,24 +181,7 @@ def bam2fragments(
     data.obs.to_csv(out_metadata, sep="\t",header=True)
 
     data.write(out_file_h5, compression="gzip")
-    # if barcode_tag in ["L5", "L6", "L7", "LB", "CB", "SC"]:
-    #     data.obs['batch'] = sampleid + "_" + barcode_tag
-    #     snap.ex.export_coverage(data, 
-    #         groupby='batch',
-    #         out_dir=output_dir,
-    #         blacklist=blacklist[species],
-    #         prefix=sampleid + "_" + barcode_tag + "_bulk",
-    #         n_jobs=-1)
-    #     ## cluster
-    #     snap.ex.export_coverage(data, 
-    #         groupby='leiden',
-    #         out_dir=output_dir,
-    #         blacklist=blacklist[species],
-    #         prefix=sampleid + "_" + barcode_tag,
-    #         n_jobs=-1)
 
-    # gene_acivity = snap.pp.make_gene_matrix(data, anno_gff[species])
-    # gene_acivity.write(out_gene_matrix_h5, compression="gzip")
     
     # data.close()
     print(f'{barcode_tag} has finished !', file=sys.stderr)
@@ -216,7 +198,6 @@ def main():
         print(f'level matrix: {args.level_indir}', file=sys.stderr)
         for tag in tags_level[::-1]:
             print(f'{tag} processing...', file=sys.stderr)
-            # for _bin_size in ["500", "2000", "5000"]:
             for _bin_size in ["2000"]:
                 bam2fragments(
                     args.input_bam,

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # Split LIANTI/ME-like reads by detecting the Tn5/ME adaptor at the start of R1.
-# This helper is intentionally small because the main pipelines call cutadapt directly
-# for most production runs.
+# This helper is intentionally small because production pipelines usually call cutadapt directly.
 
 set -euo pipefail
 

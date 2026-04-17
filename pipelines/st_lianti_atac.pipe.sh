@@ -115,7 +115,6 @@ while true; do
     esac
 done
 
-## ---- inspect arguments ---
 if [[ ! $read1 =~ "R1" ]]; then
     echo $read1 "wrong Read1 specified"
     exit
@@ -163,7 +162,6 @@ else
 fi 
 
 
-## ---- SOFTWARE --- 
 cutadapt="${CUTADAPT:-cutadapt}"
 bedtools="${BEDTOOLS:-bedtools}"
 bowtie2="${BOWTIE2:-bowtie2}"
@@ -181,7 +179,6 @@ Rscript="${RSCRIPT:-Rscript}"
 macs2="${MACS2:-macs2}"
 bamCoverage="${BAMCOVERAGE:-bamCoverage}"
 makeSpatialObj="${src}/createSeuratObj.R"
-## ---- FILES ---
 hg38_idx="${HG38_BOWTIE2_INDEX:-/path/to/bowtie2/hg38}"
 mm10_idx="${MM10_BOWTIE2_INDEX:-/path/to/bowtie2/mm10}"
 
@@ -284,22 +281,25 @@ function stat_abortive(){
     read1=$outdir/trim/${sampleid}_IVT_R1.fastq.gz
     read2=$outdir/trim/${sampleid}_IVT_R2.fastq.gz
 
-    # less $read2 | head -n 400000 | pigz > $outdir/stat_abortive/$sampleid.100K.R2.fastq.gz
+    sampled_read2="$outdir/stat_abortive/$sampleid.100K.R2.fastq.gz"
     echo "Downsampling to 100K reads..."
+    "$python" - "$read2" "$sampled_read2" <<'PY'
+import gzip
+import sys
+from pathlib import Path
 
-    # ## OLD VERSION: polyA
-    # $cutadapt -j $thread_trim \
-    #     -q 20 \
-    #     -a "A{11};min_overlap=11" \
-    #     -a "G{13};min_overlap=13" \
-    #     --trim-n \
-    #     --no-indels \
-    #     --json $outdir/stat_abortive/$sampleid.trimming_report.txt \
-    #     -e 2 \
-    #     -o $outdir/stat_abortive/${sampleid}_polyA_trimmed.R2.fastq.gz \
-    #     $outdir/stat_abortive/$sampleid.100K.R2.fastq.gz
+input_fastq = Path(sys.argv[1])
+output_fastq = Path(sys.argv[2])
+max_lines = 400_000
 
-    ## NEW VERSION: polyN
+with gzip.open(input_fastq, "rt") as reader, gzip.open(output_fastq, "wt") as writer:
+    for line_number, line in enumerate(reader, start=1):
+        if line_number > max_lines:
+            break
+        writer.write(line)
+PY
+
+    # Trim polyN/adaptor tails for abortive-extension QC.
     $cutadapt -j $thread_trim \
         -q 20 \
         -a "TCTGGCCTTGCACCTCAAGCA" \
@@ -309,7 +309,7 @@ function stat_abortive(){
         --json $outdir/stat_abortive/$sampleid.trimming_report.txt \
         -e 2 \
         -o $outdir/stat_abortive/${sampleid}_polyA_trimmed.R2.fastq.gz \
-        $outdir/stat_abortive/$sampleid.100K.R2.fastq.gz
+        $sampled_read2
 
 
     $seqkit fx2tab $outdir/stat_abortive/${sampleid}_polyA_trimmed.R2.fastq.gz \
@@ -325,7 +325,6 @@ function barcode_calling(){
     if [[ ! -d $outdir/barcode ]];then 
         mkdir -p $outdir/barcode
     fi 
-    # export PERL5LIB="/usr/lib64/perl5/vendor_perl"
     read1=$outdir/trim/${sampleid}_IVT_R1.fastq.gz
     read2=$outdir/trim/${sampleid}_IVT_R2.fastq.gz
       
@@ -368,19 +367,7 @@ function trim_fq(){
         mkdir -p $outdir/trim
     fi 
 
-    # -g "^AAGCAGTGGTATCAACGCAGAGTACATAGATGTGTATAAGAGACAG" \
     if [[ ! -s $outdir/trim/${sampleid}_clean.R2.fastq.gz ]];then 
-        # $cutadapt -j $thread_trim \
-        #     -a "A{11};min_overlap=11" \
-        #     -a "G{13};min_overlap=13" \
-        #     --trim-n \
-        #     --no-indels \
-        #     --minimum-length $read_len \
-        #     --json $outdir/trim/$sampleid.trimming_report.txt \
-        #     -e 2 \
-        #     -o $outdir/trim/${sampleid}_clean.R2.fastq.gz \
-        #     $outdir/barcode/${sampleid}.barcoded.fastq.gz
-        ## NEW VERSION: polyN
         $cutadapt -j $thread_trim \
             -a "TCTGGCCTTGCACCTCAAGCA" \
             -a "G{13};min_overlap=13" \
@@ -419,15 +406,7 @@ function align(){
     $samtools index $outdir/align/${sampleid}.tagged.bam
     $samtools stats $outdir/align/${sampleid}.tagged.bam > $outdir/align/${sampleid}.bam.stat
 
-    ## No need anymore
-    # $spatial_IVT tag2bam \
-    #     --input_bam $outdir/align/${sampleid}.sorted.bam \
-    #     --output_bam $outdir/align/${sampleid}.tagged.bam \
-    #     --threads $SLURM_CPUS_PER_TASK 
 
-    # $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/align/${sampleid}.tagged.bam
-    # rm $outdir/align/${sampleid}.sorted.bam
-    # rm $outdir/align/${sampleid}.sorted.bam.bai
 
 }
 
@@ -497,25 +476,9 @@ function cell_split(){
         mkdir -p $outdir/fragments
     fi 
 
-    ## ------ S1000 ###
-    # $segCell \
-    ##     -f $img \
-    ##     -d $outdir/cell_split
             
-    #   ## detect in tissue barcodes
-    ##     $python_cv2 $he_detect \
-    ##         -e $img \
-    ##         -o $outdir/super_spot/ \
-    ##         -m $outdir/super_spot/ \
-    ##         -r $outdir/cell_split/roi_heAuto.json
-    ## ------------------
 
     if [[ -n $img ]];then
-        # $segCell \
-        #     -f $img \
-        #     -d $outdir/cell_split \
-        #     -t "S3000" \
-        #     -fs $chanel
         $segCell \
             -f $img \
             -d $outdir/cell_split \
@@ -608,25 +571,7 @@ function spatial_position(){
         mkdir -p $outdir/spatial
     fi 
 
-    # # in tissue metadat
-    # ls $outdir/fragments/*metadata.txt |grep -v SC | while read meta_file;do 
-    #     prefix_sample=$(basename -s ".metadata.txt" $meta_file)
-    #     level_num=$(echo $prefix_sample | awk '{split($1, a, "L");print a[2]}')
-    #     if [[ $level_num == "B" ]] ; then level_num=13; fi
-    #     $Rscript $src/atac_QC.R \
-    #         $meta_file \
-    #         $outdir/fragments/$prefix_sample.in_tissue.qc.pdf \
-    #         "TRUE" \
-    #         $outdir/super_spot/level_${level_num}/barcodes_in_tissue.tsv.gz
-    # done 
 
-    # ## summary for in tissue barcode
-    # $Rscript $src/drawQC.R \
-    #     $outdir/fragments \
-    #     $sampleid \
-    #     $outdir/fragments/$sampleid.in_tissue.n_frag.png \
-    #     "TRUE" \
-    #     $outdir/super_spot
 
     for level_num in '3' '5' '6' '7' 'B';do
         prefix_sample=${sampleid}_L${level_num}
@@ -681,9 +626,6 @@ function bulk(){
         | cut -f 1 | grep -v MT \
         | xargs $samtools view -b $outdir/bulk/${sampleid}.dedup.bam > $outdir/bulk/${sampleid}.clean.bam
     
-    # $Rscript $src/shiftAlignment.R \
-    #     $outdir/bulk/${sampleid}.clean.bam \
-    #     $outdir/bulk/${sampleid}.shifted.bam
     $samtools index -@ $SLURM_CPUS_PER_TASK $outdir/bulk/${sampleid}.clean.bam
 
     effect_genome_size=2652783500
@@ -697,17 +639,6 @@ function bulk(){
 
 
 
-    # ## call peak
-    # $macs2 callpeak \
-    #     -t $outdir/bulk/${sampleid}.shifted.bam \
-    #     --keep-dup all \
-    #     -f BAM \
-    #     -B -g hs \
-    #     -n $sampleid \
-    #     --nomodel \
-    #     --shift -75 \
-    #     --extsize 150 \
-    #     --outdir $outdir/bulk
 
 }
 
@@ -731,17 +662,7 @@ function stat(){
 }
 
 
-## --- this is for test ---
 function dedup(){
-    ## --- not working ---
-    # $picard MarkDuplicates \
-    #     -I $outdir/align/${sampleid}.tagged.bam \
-    #     -O $outdir/align/${sampleid}.rmdup.bam \
-    #     -M $outdir/align/${sampleid}.rmdup.txt \
-    #     -REMOVE_DUPLICATES true \
-    #     -READ_NAME_REGEX null \
-    #     --BARCODE_TAG CB
-    ## -------------
 
     if [[ ! -d $outdir/fragments ]];then 
         mkdir -p $outdir/fragments
@@ -790,7 +711,6 @@ function dedup_UMI(){
     $Rscript $src/atac_QC.R 1 $outdir/dedup_UMI/${sampleid}.metadata.txt $outdir/dedup_UMI/${sampleid}.qc.pdf
 }
 
-## ------- ###
 
 
 set -x 
@@ -798,9 +718,8 @@ set -x
 
 case "$option" in
 pipe)
-    # stat_abortive
-    # select_Tn5_reads
-    # barcode_calling
+    select_Tn5_reads
+    barcode_calling
     trim_fq
     align
     decode_chip
@@ -823,9 +742,6 @@ dedup)
     dedup
     ;;
 bulk)
-    ## barcode_calling
-    ## trim_fq
-    ## align
     bulk
     ;;
 super_spot)

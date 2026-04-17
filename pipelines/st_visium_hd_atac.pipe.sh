@@ -127,7 +127,6 @@ while true; do
     esac
 done
 
-## ---- inspect arguments ---
 if [[ ! $read1 =~ "R1" ]]; then
     echo $read1 "wrong Read1 specified"
     exit
@@ -168,7 +167,6 @@ else
     sort_thread=$SLURM_CPUS_PER_TASK
 fi 
 
-## ---- SOFTWARE --- 
 trim_galore="${TRIM_GALORE:-trim_galore}"
 cutadapt="${CUTADAPT:-cutadapt}"
 bedtools="${BEDTOOLS:-bedtools}"
@@ -201,7 +199,6 @@ run_signac="${src}/visium_hd_atac/run_signac.R"
 diffuse_distance="${src}/visium_hd_atac/analyze_diffusion_distance.R"
 swap_count="${repo_root}/tools/cal_swap_score.sh"
 
-## ---- FILES ---
 hg38_idx="${HG38_BOWTIE2_INDEX:-/path/to/bowtie2/hg38}"
 mm10_idx="${MM10_BOWTIE2_INDEX:-/path/to/bowtie2/mm10}"
 chrom_size_var="${species^^}_CHROM_SIZES"
@@ -272,21 +269,6 @@ function run_spaceranger(){
     if [[ ! -d $outdir/trim/R2/ ]];then
         mkdir -p $outdir/trim/R2/
     fi
-    ## ------------- end ---------------------
-    # $cutadapt -j $thread_trim \
-    #     -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
-    #     -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA \
-    #     -G AAGCAGTGGTATCAACGCAGAGT \
-    #     -G 'G{10}' \
-    #     --poly-a \
-    #     -q 20,20 \
-    #     -U 15 \
-    #     -e 0.1 \
-    #     --minimum-length 20 \
-    #     -o $outdir/trim/R2/${sampleid}_IVT.R1.fastq.gz \
-    #     -p $outdir/trim/R2/${sampleid}_IVT.R2.fastq.gz \
-    #     $read1 $read2
-    ## --------------- end ---------------------
 
     $cutadapt -j $thread_trim \
         -G "^GGAGTGTGAAGACAGAGATGTGTATAAGAGACAG" \
@@ -325,16 +307,6 @@ function select_Tn5_reads(){
     if [[ ! -d $outdir/trim/R2 ]];then 
         mkdir -p $outdir/trim/R2
     fi 
-    # Select by R1
-    # $cutadapt -j $thread_trim \
-    #     -G "GGCAGAGTACATAGATGTGTATAAGAGACAG" \
-    #     -e 3 \
-    #     -o $outdir/trim/R1/${sampleid}_IVT_R1.fastq.gz \
-    #     -p $outdir/trim/R1/${sampleid}_IVT_R2.fastq.gz \
-    #     --untrimmed-output $outdir/trim/R1/${sampleid}_RNA_R1.fastq.gz \
-    #     --untrimmed-paired-output $outdir/trim/R1/${sampleid}_RNA_R2.fastq.gz \
-    #     --action=none \
-    #     $read1 $read2
     
     ## Select by R2
     $cutadapt -j $thread_trim \
@@ -357,7 +329,6 @@ function stat_abortive(){
     head -n 400000 <(zcat $outdir/trim/R2/${sampleid}*R2*fastq.gz) | pigz > $outdir/stat_abortive/$sampleid.100K.R2.fastq.gz
     
     echo "Downsampling to 100K reads..."
-        # -a "CTGTCTCTTATACACATCT" \
 
     $cutadapt -j $thread_trim \
         -a "A{13};min_overlap=7" \
@@ -381,7 +352,6 @@ function barcode_calling(){
     if [[ ! -d $outdir/barcode ]];then 
         mkdir -p $outdir/barcode
     fi 
-    # export PERL5LIB="/usr/lib64/perl5/vendor_perl"
 
     if [[ $n_line -eq "-1" ]];then 
         n_line=$(tail -n 1  $outdir/${sampleid}/outs/metrics_summary.csv | awk -F, '{print $2 }' | xargs) 
@@ -457,10 +427,6 @@ function trim_fq(){
         fi 
     fi
 
-    # -g "T{30};max_error_rate=0.2;min_overlap=9" \
-    # -a "G{13};min_overlap=9" \
-    # -a "A{13};min_overlap=9" \
-    # -g "CTGTCTCTTATACACATCT;;max_error_rate=0.1;min_overlap=5" \
 
 }
 
@@ -473,12 +439,6 @@ function align(){
 
     if [[ ! -s $outdir/align/${sampleid}.sorted.bam ]];then 
 
-        ## cellbarcode  s_016um_00418_00418;
-        ### cellbarcode[2]: 016um
-        ### res_string[1]: 016
-        ### split(cellbarcode[2], res_string, "u");
-        ### new_string_8 = sprintf("%03d%s", res_string[1] * 4, "um");
-        ### new_string_16 = sprintf("%03d%s", res_string[1] * 8, "um");
         if [[ $paired == "TRUE" ]];then
             $bowtie2 -x $bowti2_idx \
                 -1 $outdir/trim/${sampleid}_clean_barcoded.R1.fastq.gz \
@@ -565,20 +525,9 @@ function snapATAC2(){
                 --tissue_barcode $outdir/${sampleid}/outs/binned_outputs/square_${resolution_list[$res]}/filtered_feature_bc_matrix/clean_barcodes.tsv.gz
         fi 
 
-        # $Rscript $signac_chromVar \
-        #     $outdir/fragments/${sampleid}_${res}.peak_matrix.h5 \
-        #     $outdir/fragments/${sampleid}_${res}.fragments.tsv.gz \
-        #     $species
 
     done 
 
-    #ls $outdir/fragments/*bw | while read ff;do
-    #    sample=$(basename -s ".bw" $ff)
-    #    $bigWigToBedGraph $ff $outdir/fragments/${sample}.bg
-    #    $bedGraphToBigWig $outdir/fragments/${sample}.bg \
-    #        $chromSize \
-    #        $outdir/fragments/${sample}.bigWig
-    #done 
     ls $outdir/fragments/*metadata.txt | while read meta_file;do 
         prefix_sample=$(basename -s ".metadata.txt" $meta_file)
         $Rscript $src/atac_QC.R 1 $meta_file $outdir/fragments/$prefix_sample.qc.pdf
@@ -652,9 +601,6 @@ function bulk(){
 
 function signac_pipe(){
 
-    # for res in "CB" "LS";do
-    # done
-    # --input_file $outdir/align/${sampleid}.sorted.bam \
 
     res="CB"
     $Rscript $run_signac \
@@ -756,17 +702,8 @@ function cal_fragment_len(){
 
 }
 function cal_swap_score(){
-    # for res in "CB" "LS";do
 
-    #     bash $swap_count \
-    #         $outdir/fragments/${sampleid}_${res}.fragments.tsv.gz \
-    #         > ${outdir}/stat/swap_${res}.txt
-    # done
 
-    # $Rscript $diffuse_distance \
-    #     --fragments_file $outdir/spatial/${sampleid}.extended_fragments_6_col.tsv \
-    #     --outdir $outdir/spatial \
-    #     --max_dist_um 500
     res="L8"
     $Rscript $run_signac \
         --input_file $outdir/align/${sampleid}.sorted.bam \
@@ -784,7 +721,6 @@ function cal_swap_score(){
 
 }
 
-## ------- ###
 
 
 set -x 
@@ -792,10 +728,10 @@ set -x
 
 case "$option" in
 pipe)
-    # run_spaceranger
-    # barcode_calling
-    # trim_fq
-    # align 
+    run_spaceranger
+    barcode_calling
+    trim_fq
+    align
     snapATAC2
     spatial_position
     bulk
@@ -809,15 +745,9 @@ barcode)
     barcode_calling
     ;;
 QC)
-    # select_Tn5_reads
-    # bulk 
-    # stat
-    # stat_abortive
-    # cal_swap_score
     cal_fragment_len
     ;;
 atac)
-    # snapATAC2
     signac_pipe
     ;;
 dedup)
